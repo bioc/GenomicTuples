@@ -9,6 +9,9 @@
 #' @param subject A GTuples instance
 #' @param maxgap
 #' 
+#' @importFrom IRanges IRanges
+#' @importMethodsFrom IRanges splitRanges
+#' 
 #' @keywords internal
 .findEqual.GTuples <- function(query, subject, maxgap, minoverlap, 
                                select, ignore.strand) {
@@ -59,10 +62,12 @@
       s_matrix <- extractROWS(s_tuples, s_idx)[, seq.int(i, i + 1, 1), 
                                                drop = FALSE]
       s_ranges <- IRanges(start = s_matrix[, 1L], end = s_matrix[, 2L])
-      min.score <- IRanges:::min_overlap_score(maxgap, minoverlap)
-      hits <- IRanges:::findOverlaps_NCList(q_ranges, s_ranges,
-                                            min.score = min.score,
-                                            type = type, select = "all",
+      hits <- IRanges:::findOverlaps_NCList(query = q_ranges, 
+                                            subject = s_ranges,
+                                            maxgap = maxgap,
+                                            minoverlap = minoverlap,
+                                            type = type, 
+                                            select = "all",
                                             circle.length = circle.length)
       q_hits <- queryHits(hits)
       s_hits <- subjectHits(hits)
@@ -89,7 +94,7 @@
   if (is.null(s_hits)) {
     s_hits <- integer(0)
   }
- 
+  
   selectHits(Hits(q_hits, s_hits, q_len, s_len), select = select)
 }
 
@@ -127,7 +132,7 @@ setMethod("findOverlaps", signature = c("GTuples", "GTuples"),
               # Second check is whether one, and only one, of query or subject 
               # have size NA.
               if ((isTRUE(size(query) != size(subject))) || 
-                    (is.na(size(query)) + is.na(size(subject))) == 1) {
+                  (is.na(size(query)) + is.na(size(subject))) == 1) {
                 stop("Cannot findOverlaps between '", class(query), "' and '", 
                      class(subject), "' with 'type = \"equal\"' if they have ",
                      "different 'size'.")
@@ -162,7 +167,7 @@ setMethod("findOverlaps", signature = c("GTuples", "GTuples"),
 ### -------------------------------------------------------------------------
 #' @export
 setMethod("countOverlaps", signature = c("GTuples", "GTuples"),
-    GenomicRanges:::countOverlaps.definition
+          GenomicRanges:::countOverlaps.definition
 )
 
 # All others defined via inheritance.

@@ -98,6 +98,7 @@ setValidity2("GTuples", .valid.GTuples)
 ### Constructor
 ###
 
+#' @importFrom IRanges IRanges
 #' @export
 GTuples <- function(seqnames = Rle(), 
                     tuples = matrix(), 
@@ -370,6 +371,8 @@ setMethod("tuples",
           }
 )
 
+#' @importFrom IRanges IRanges
+#' 
 #' @export
 setReplaceMethod("tuples", 
                  "GTuples", 

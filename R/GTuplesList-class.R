@@ -53,6 +53,8 @@ setValidity2("GTuplesList", .valid.GTuplesList)
 ### Constructor
 ###
 
+#' @importFrom IRanges PartitioningByEnd
+#' 
 #' @export
 GTuplesList <- function(...) {
   listData <- list(...)
