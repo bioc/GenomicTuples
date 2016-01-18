@@ -172,7 +172,9 @@ setMethod("as.data.frame",
           "GTuples", 
           function(x, row.names = NULL, optional = FALSE, ...) {
             if (is.na(size(x))) {
-              data.frame()
+              return(data.frame(seqnames = S4Vectors:::decodeRle(seqnames(x)),
+                                strand = S4Vectors:::decodeRle(strand(x)),
+                                stringsAsFactors = FALSE))
             } else {
               tuples <- tuples(x)
               if (missing(row.names)) {
@@ -193,17 +195,15 @@ setMethod("as.data.frame",
                                                'internalPos']
                 mcols_df <- cbind(as.data.frame(extraColumns, ...), mcols_df)
               }
-              data.frame(seqnames = as.factor(seqnames(x)), 
+              data.frame(seqnames = S4Vectors:::decodeRle(seqnames(x)), 
                          as.data.frame(tuples), 
-                         strand = as.factor(strand(x)), 
+                         strand = S4Vectors:::decodeRle(strand(x)), 
                          mcols_df, 
                          row.names = row.names, 
                          stringsAsFactors = FALSE)
             }
           }
 )
-
-#' @export
 setMethod("granges", 
           "GTuples",
           function(x, use.mcols = FALSE) {
