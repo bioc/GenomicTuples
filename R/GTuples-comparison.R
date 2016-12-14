@@ -64,7 +64,7 @@
   # length.
   # shortened error message because a long error trigger line formatting
   # that breaks the testthat error parser.
-
+  
   # This is where .pcompare_GTuples really differs from .pcompare_GenomicRanges
   # NOTE: moved this up because the next 'if' will fail on NA != NA
   if (is.na(size(x)) || is.na(size(y))) {
@@ -220,7 +220,7 @@ setMethod("match",
             merge(seqinfo(x), seqinfo(table))
             
             val <- findOverlaps(x, table, type = "equal", select = "first", 
-                          ignore.strand = ignore.strand)
+                                ignore.strand = ignore.strand)
             val[is.na(val)] <- nomatch
             val
           }
@@ -300,21 +300,45 @@ setMethod("is.unsorted", "GTuples",
             if (size(x) < 3L) {
               callNextMethod()
             } else {
-              # NOTE: This actually sorts the object (or, rather, the 
-              #       data.table representation of the object). Despite this, 
-              #       it's still very fast because data.table is so fast.
-              key <- c("seqnames", "strand", paste0("pos", seq_len(size(x))))
-              y <- .GT2DT(x, ignore.strand = ignore.strand)
-	      # TODO: This used to mimic behaviour of 
-              #       is.unsorted(setkeyv(y[, grp := .GRP, by = key], key)[, 
-              #        grp], strictly = strictly)
-              #       but no longer seems to; why?
-              #       Some clues at 
-              #       https://github.com/Rdatatable/data.table/issues/1880
-              # is.unsorted(y[, grp := .GRP, keyby = key][, grp], 
-              #             strictly = strictly)
-              is.unsorted(setkeyv(y[, grp := .GRP, by = key], 
-                                  key)[, grp], strictly = strictly)
+              # NOTE: It is tempting to use
+              #         if (ignore.strand) {
+              #           x <- unstrand(x)
+              #         }
+              #         is.unsorted(order(x), strictly = strictly)
+              #       However, this is incorrect when there are repeated tuples 
+              #       because order assigns these distinct values
+              #       This implementation is clunky but has correct behaviour. 
+              #       The idea is to check that each 2-tuple within the m-tuple 
+              #       is unsorted and return TRUE as soon as this is identified.
+              # NOTE: a and b are the same for all 2-tuples whereas c and d are 
+              #       updated as we move through the 2-tuples
+              a <- S4Vectors:::decodeRle(seqnames(x))
+              if (ignore.strand) {
+                b <- integer(length(x))
+              } else {
+                b <- S4Vectors:::decodeRle(strand(x))
+              }
+              c <- start(x)
+              d <- x@internalPos[, 1L]
+              unsorted <- !S4Vectors:::sortedIntegerQuads(a, b, c, d, 
+                                                          strictly = strictly)
+              if (unsorted) {
+                return(TRUE)
+              }
+              if (size(x) > 3) {
+                for (j in seq(2L, size(x) - 2L, 1L)) {
+                  c <- x@internalPos[, j - 1]
+                  d <- x@internalPos[, j]
+                }
+                unsorted <- !S4Vectors:::sortedIntegerQuads(a, b, c, d, 
+                                                            strictly = strictly)
+                if (unsorted) {
+                  return(TRUE)
+                }
+              }
+              c <- x@internalPos[, size(x) - 2L]
+              d <- end(x)
+              !S4Vectors:::sortedIntegerQuads(a, b, c, d, strictly = strictly)
             }
           }
 )
